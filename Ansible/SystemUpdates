@@ -1,0 +1,43 @@
+---
+- name: Perform system updates and notify via email
+  hosts: <Customer-Inventory-name>
+  become: yes
+  vars:
+    email_recipient: "alerts@zimbrasupportlab.com"
+    smtp_server: "mail.zimbrasupportlab.com"  # Replace with your SMTP server
+    smtp_port: 587  # Replace with your SMTP server port
+  tasks:
+
+    - name: Update the package repository cache (Debian/Ubuntu)
+      apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Update all packages to the latest version (Debian/Ubuntu)
+      apt:
+        upgrade: dist
+      when: ansible_os_family == "Debian"
+
+    - name: Update the package repository cache (RHEL/CentOS)
+      yum:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat"
+
+    - name: Reboot if needed
+      reboot:
+      when: ansible_facts.ansible_kernel != "reboot-required"
+
+    - name: Send email notification
+      mail:
+        host: "{{ smtp_server }}"
+        port: "{{ smtp_port }}"
+        to: "{{ email_recipient }}"
+        subject: "System Update Completed on {{ inventory_hostname }}"
+        body: |
+          Hello,
+
+          The system update on the server {{ inventory_hostname }} has been successfully completed.
+
+          Regards,
+          
